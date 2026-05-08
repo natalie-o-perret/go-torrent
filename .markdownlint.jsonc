@@ -20,5 +20,7 @@
     "style": "ordered"
   },
   // Allow emphasis used as heading (we use **bold** in tables)
-  "MD036": false
+  "MD036": false,
+  // PR/issue templates don't start with h1
+  "MD041": false
 }
