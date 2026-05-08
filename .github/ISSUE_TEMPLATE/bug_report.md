@@ -10,7 +10,7 @@ labels: bug
 
 ## How to reproduce
 
-```
+```text
 // Minimal steps or code snippet
 ```
 
