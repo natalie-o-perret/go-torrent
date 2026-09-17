@@ -1,4 +1,4 @@
-// Package gotorrent is a BitTorrent protocol library and CLI for Go 1.26.3+.
+// Package gotorrent is a BitTorrent protocol library and CLI for Go 1.26.7+.
 //
 // It provides focused packages for v1, v2, and hybrid torrents over TCP and
 // uTP, with bounded decoding, discovery, storage, and peer state.

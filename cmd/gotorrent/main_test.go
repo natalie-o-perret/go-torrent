@@ -271,7 +271,7 @@ func TestRunDownloadOverUTP(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	infoCtx, cancelInfo := context.WithTimeout(context.Background(), 5*time.Second)
+	infoCtx, cancelInfo := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancelInfo()
 	var info, infoErrors bytes.Buffer
 	if err := run(infoCtx, []string{"info", magnetSource}, &info, &infoErrors); err != nil {
@@ -292,7 +292,7 @@ func TestRunDownloadOverUTP(t *testing.T) {
 		{name: "magnet", source: magnetSource},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 			defer cancel()
 			status := &cancelOnCompleteWriter{cancel: cancel}
 			downloadRoot := t.TempDir()

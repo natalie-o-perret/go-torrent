@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Contributing](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-A focused, composable BitTorrent protocol library and client for Go 1.26.3+.
+A focused, composable BitTorrent protocol library and client for Go 1.26.7+.
 
 > [!NOTE]
 > The library supports v1, v2, and hybrid torrents over TCP and uTP. Network,
