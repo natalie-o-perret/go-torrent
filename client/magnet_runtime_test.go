@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"net"
@@ -713,13 +712,10 @@ func newMagnetTrackerServer(t *testing.T, endpoint string) *magnetTrackerServer 
 		observed.mu.Unlock()
 
 		host, portText, _ := net.SplitHostPort(endpoint)
-		ip := net.ParseIP(host).To4()
 		peerPort, _ := strconv.ParseUint(portText, 10, 16)
-		compact := append([]byte(nil), ip...)
-		var encodedPort [2]byte
-		binary.BigEndian.PutUint16(encodedPort[:], uint16(peerPort))
-		compact = append(compact, encodedPort[:]...)
-		if err := bencode.Encode(response, map[string]any{"interval": int64(60), "peers": string(compact), "tracker id": "magnet-id"}); err != nil {
+		peerID := testPeerID(89)
+		peers := []any{map[string]any{"ip": host, "port": int64(peerPort), "peer id": string(peerID[:])}}
+		if err := bencode.Encode(response, map[string]any{"interval": int64(60), "peers": peers, "tracker id": "magnet-id"}); err != nil {
 			http.Error(response, err.Error(), http.StatusInternalServerError)
 		}
 	}))

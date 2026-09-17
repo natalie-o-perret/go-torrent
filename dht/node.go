@@ -382,12 +382,11 @@ func (node *Node) validateResponder(endpoint netip.AddrPort, expected *ID, respo
 	if id == node.id {
 		return Contact{}, fmt.Errorf("dht: remote endpoint reused local node ID")
 	}
-	if !ValidNodeID(id, endpoint.Addr()) {
-		return Contact{}, fmt.Errorf("dht: node ID %s is invalid for %v", id, endpoint.Addr())
-	}
 	now := node.config.Clock()
 	contact := Contact{ID: id, Addr: endpoint, LastResponse: now}
-	node.routing(endpoint.Addr()).AddVerified(id, endpoint, now)
+	if ValidNodeID(id, endpoint.Addr()) {
+		node.routing(endpoint.Addr()).AddVerified(id, endpoint, now)
+	}
 	return contact, nil
 }
 

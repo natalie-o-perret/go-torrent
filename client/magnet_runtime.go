@@ -724,7 +724,7 @@ func openMagnetPeer(ctx context.Context, hashes metainfo.Hashes, candidate Candi
 		ReadIdleTimeout:  config.RequestTimeout,
 		MaxMetadataSize:  config.MaxMetadataSize,
 	}
-	if candidate.PeerID != ([20]byte{}) {
+	if candidate.PeerID != ([20]byte{}) && candidate.Source != SourceTracker {
 		expected := candidate.PeerID
 		sessionConfig.ExpectedPeerID = &expected
 	}

@@ -234,7 +234,7 @@ func (session *Session) handleMessage(message *Message) error {
 	if message.ID == MsgBitfield || message.ID == MsgHaveAll || message.ID == MsgHaveNone {
 		return session.handleAvailability(message)
 	}
-	if err := session.ensureAvailabilityBefore(message.ID); err != nil {
+	if err := session.ensureAvailabilityBefore(message); err != nil {
 		return err
 	}
 
@@ -368,7 +368,7 @@ func (session *Session) handleAvailability(message *Message) error {
 	return nil
 }
 
-func (session *Session) ensureAvailabilityBefore(id MessageID) error {
+func (session *Session) ensureAvailabilityBefore(message *Message) error {
 	session.mu.Lock()
 	defer session.mu.Unlock()
 	if session.metadataOnly {
@@ -377,8 +377,11 @@ func (session *Session) ensureAvailabilityBefore(id MessageID) error {
 	if session.availabilitySet {
 		return nil
 	}
+	if message.ID == MsgExtended && len(message.Payload) != 0 && message.Payload[0] == ExtendedHandshakeID {
+		return nil
+	}
 	if session.fastNegotiatedLocked() {
-		return wrapProtocol("message %d preceded Fast availability", id)
+		return wrapProtocol("message %d preceded Fast availability", message.ID)
 	}
 	// Without Fast, omitting Bitfield means the peer initially has no pieces.
 	session.availabilitySet = true

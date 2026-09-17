@@ -297,6 +297,25 @@ func TestIterativeLookupConverges(t *testing.T) {
 	}
 }
 
+func TestNonCompliantResponderIsNotRouted(t *testing.T) {
+	node := listenTestNode(t, "udp4", "127.0.0.1:0", testID(43), nil)
+	endpoint := netip.MustParseAddrPort("212.129.33.59:6881")
+	id := ID{0x79, 0x62, 0xb6, 0x58, 0x13, 0xb6, 0x97, 0xb1, 0x2d, 0x1d, 0x3a, 0xa5, 0xcd, 0x01, 0xe1, 0xda, 0x24, 0x02, 0xc0, 0xe9}
+	if ValidNodeID(id, endpoint.Addr()) {
+		t.Fatal("test node ID unexpectedly complies with BEP 42")
+	}
+	contact, err := node.validateResponder(endpoint, nil, map[string]any{"id": string(id[:])})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if contact.ID != id || contact.Addr != endpoint {
+		t.Fatalf("contact = %#v", contact)
+	}
+	if contacts := node.RoutingContacts(); len(contacts) != 0 {
+		t.Fatalf("non-compliant responder entered routing table: %#v", contacts)
+	}
+}
+
 func TestGetPeersAndAnnounce(t *testing.T) {
 	server := listenTestNode(t, "udp4", "127.0.0.1:0", testID(50), nil)
 	announcer := listenTestNode(t, "udp4", "127.0.0.1:0", testID(51), nil)

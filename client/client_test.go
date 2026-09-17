@@ -38,7 +38,7 @@ func TestTrackerTCPDownloadCompletionSeedingAndShutdown(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fake.setPeer(listener.Addr().String())
+	fake.setPeer(listener.Addr().String(), testPeerID(99))
 	seedMeta := *meta
 	seedMeta.Announce = ""
 	seedMeta.AnnounceList = nil
@@ -708,13 +708,15 @@ type fakeTrackerEvent struct {
 type fakeTracker struct {
 	mu     sync.Mutex
 	peer   string
+	peerID [20]byte
 	fail   bool
 	events []fakeTrackerEvent
 }
 
-func (fake *fakeTracker) setPeer(address string) {
+func (fake *fakeTracker) setPeer(address string, peerID [20]byte) {
 	fake.mu.Lock()
 	fake.peer = address
+	fake.peerID = peerID
 	fake.mu.Unlock()
 }
 
@@ -731,20 +733,17 @@ func (fake *fakeTracker) serveHTTP(w http.ResponseWriter, request *http.Request)
 	fake.mu.Lock()
 	fake.events = append(fake.events, fakeTrackerEvent{event: request.URL.Query().Get("event"), left: left, infoHash: infoHash})
 	address := fake.peer
+	peerID := fake.peerID
 	fail := fake.fail
 	fake.mu.Unlock()
 	if fail {
 		http.Error(w, "tracker unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	peers := ""
+	var peers any = ""
 	if host, portText, err := net.SplitHostPort(address); err == nil {
-		if ip := net.ParseIP(host).To4(); ip != nil {
-			port, _ := strconv.ParseUint(portText, 10, 16)
-			compact := append([]byte(nil), ip...)
-			compact = append(compact, byte(port>>8), byte(port))
-			peers = string(compact)
-		}
+		port, _ := strconv.ParseUint(portText, 10, 16)
+		peers = []any{map[string]any{"ip": host, "port": int64(port), "peer id": string(peerID[:])}}
 	}
 	if err := bencode.Encode(w, map[string]any{"interval": int64(1), "peers": peers}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

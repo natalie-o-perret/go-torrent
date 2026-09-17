@@ -732,7 +732,7 @@ func TestDecodeRejectsNoncanonicalMetainfo(t *testing.T) {
 func TestDecodeExtensions(t *testing.T) {
 	for _, urlList := range []any{
 		"https://seed.example/file",
-		[]any{"https://seed-1.example/file", "ftp://seed-2.example/file"},
+		[]any{"https://seed-1.example/file", "", "ftp://seed-2.example/file"},
 	} {
 		info := validV1Info()
 		info["private"] = int64(1)

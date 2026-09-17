@@ -902,7 +902,7 @@ func (state *coordinator) startPeer(conn net.Conn, endpoint string, protocol pee
 		WriteTimeout:           state.client.writeTimeout,
 		PEXMinInterval:         pexInterval,
 	}
-	if expectedID != ([20]byte{}) {
+	if expectedID != ([20]byte{}) && origin.source != SourceTracker {
 		expected := expectedID
 		config.ExpectedPeerID = &expected
 	}

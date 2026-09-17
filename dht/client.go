@@ -85,7 +85,7 @@ func (node *Node) getPeersFrom(ctx context.Context, destination Contact, expecte
 		return GetPeersResponse{}, err
 	}
 	result := GetPeersResponse{From: from}
-	if raw, exists := response["token"]; exists {
+	if raw, exists := response["token"]; exists && ValidNodeID(from.ID, from.Addr.Addr()) {
 		value, ok := raw.(string)
 		if !ok || value == "" || len(value) > 64 {
 			return GetPeersResponse{}, fmt.Errorf("dht: invalid get_peers token")
@@ -436,8 +436,9 @@ func sortContacts(contacts []Contact, target ID) {
 	})
 }
 
-// Bootstrap verifies seed endpoints and looks up the local ID. Seed work and
-// the iterative lookup both obey Alpha and MaxCandidates.
+// Bootstrap queries seed endpoints and looks up the local ID. Explicit seeds
+// may be legacy nodes without BEP 42 IDs, but only compliant contacts enter the
+// routing table. Seed work and the iterative lookup obey Alpha and MaxCandidates.
 func (node *Node) Bootstrap(ctx context.Context, seeds []netip.AddrPort) error {
 	if ctx == nil {
 		return fmt.Errorf("dht: nil context")
@@ -463,10 +464,16 @@ func (node *Node) Bootstrap(ctx context.Context, seeds []netip.AddrPort) error {
 		end := min(offset+node.config.Alpha, len(unique))
 		results := make(chan error, end-offset)
 		for _, seed := range unique[offset:end] {
-			go func() {
-				_, err := node.Ping(ctx, seed)
+			go func(seed netip.AddrPort) {
+				response, err := node.FindNode(ctx, seed, node.id, IPv4, IPv6)
+				if err == nil {
+					now := node.config.Clock()
+					for _, contact := range append(response.Nodes4, response.Nodes6...) {
+						node.routing(contact.Addr.Addr()).add(contact, now)
+					}
+				}
 				results <- err
-			}()
+			}(seed)
 		}
 		for range end - offset {
 			if err := <-results; err != nil {

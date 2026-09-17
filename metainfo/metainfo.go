@@ -430,15 +430,19 @@ func parseTopLevel(m *MetaInfo, d map[string]any) error {
 			if err != nil {
 				return err
 			}
-			m.URLList = []string{url}
+			if url != "" {
+				m.URLList = []string{url}
+			}
 		case []any:
-			m.URLList = make([]string, len(value))
+			m.URLList = make([]string, 0, len(value))
 			for i, rawURL := range value {
 				url, err := text(rawURL, fmt.Sprintf("'url-list' entry %d", i))
 				if err != nil {
 					return err
 				}
-				m.URLList[i] = url
+				if url != "" {
+					m.URLList = append(m.URLList, url)
+				}
 			}
 		default:
 			return fmt.Errorf("metainfo: 'url-list' is neither a string nor a list")

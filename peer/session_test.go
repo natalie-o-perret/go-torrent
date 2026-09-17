@@ -348,7 +348,7 @@ func TestSessionReportsLateBlockAfterTimeout(t *testing.T) {
 	}
 }
 
-func TestSessionOptionalBaseAvailabilityBeforeExtensionHandshake(t *testing.T) {
+func TestSessionAcceptsExtensionHandshakeBeforeAvailability(t *testing.T) {
 	for _, test := range []struct {
 		name string
 		fast bool
@@ -393,18 +393,6 @@ func TestSessionOptionalBaseAvailabilityBeforeExtensionHandshake(t *testing.T) {
 				t.Fatalf("write extension handshake: %v", err)
 			}
 
-			if test.fast {
-				select {
-				case <-session.Done():
-					if !errors.Is(session.Err(), ErrProtocol) {
-						t.Fatalf("session error = %v, want protocol violation", session.Err())
-					}
-				case <-time.After(2 * time.Second):
-					t.Fatal("Fast session accepted an extension handshake before availability")
-				}
-				return
-			}
-
 			select {
 			case handshake := <-handshakeReceived:
 				if handshake.Extensions[ExtensionMetadata] != 7 {
@@ -413,10 +401,19 @@ func TestSessionOptionalBaseAvailabilityBeforeExtensionHandshake(t *testing.T) {
 			case <-time.After(2 * time.Second):
 				t.Fatal("base extension handshake was not delivered")
 			}
-			snapshot := session.Snapshot()
-			if !snapshot.RemoteAvailability || snapshot.RemotePieces[0] {
-				t.Fatalf("remote availability = (%v, %v), want established empty availability", snapshot.RemoteAvailability, snapshot.RemotePieces)
+			if snapshot := session.Snapshot(); snapshot.RemoteAvailability {
+				t.Fatal("extension handshake established availability")
 			}
+			availability := &Message{ID: MsgBitfield, Payload: FormatBitfield([]bool{true})}
+			if test.fast {
+				availability = &Message{ID: MsgHaveAll}
+			}
+			if err := WriteMessage(remoteConn, availability); err != nil {
+				t.Fatalf("write availability: %v", err)
+			}
+			waitSessionState(t, session, func(snapshot SessionSnapshot) bool {
+				return snapshot.RemoteAvailability && snapshot.RemotePieces[0]
+			})
 		})
 	}
 }
